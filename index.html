@@ -1,0 +1,611 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Generador de Notas de Pedido</title>
+    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;600&display=swap" rel="stylesheet">
+    
+    <script src="https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js"></script>
+
+    <style>
+        :root {
+            --primary-color: #007bff; /* Azul para énfasis */
+            --secondary-color: #6c757d; /* Gris para texto secundario */
+            --accent-color: #28a745; /* Verde para acciones positivas */
+            --background-light: #f8f9fa; /* Fondo claro */
+            --border-color: #dee2e6; /* Color de borde */
+            --text-dark: #343a40; /* Texto oscuro */
+            --white: #fff;
+            --danger-color: #dc3545;
+        }
+
+        body {
+            font-family: 'Poppins', sans-serif;
+            background-color: var(--background-light);
+            margin: 0;
+            padding: 20px;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            min-height: 100vh;
+            color: var(--text-dark);
+            flex-direction: column; 
+        }
+
+        .container {
+            background-color: var(--white);
+            padding: 30px;
+            border-radius: 8px;
+            box-shadow: 0 4px 15px rgba(0, 0, 0, 0.1);
+            width: 100%;
+            max-width: 900px;
+            box-sizing: border-box;
+            margin-bottom: 30px;
+        }
+
+        h1 {
+            color: var(--primary-color);
+            text-align: center;
+            margin-bottom: 30px;
+            font-weight: 600;
+            font-size: 2.2em;
+        }
+
+        h2 {
+            color: var(--text-dark);
+            border-bottom: 2px solid var(--primary-color);
+            padding-bottom: 10px;
+            margin-top: 30px;
+            margin-bottom: 25px;
+            font-size: 1.6em;
+            font-weight: 500;
+        }
+
+        .form-group {
+            margin-bottom: 20px;
+        }
+
+        label {
+            display: block;
+            margin-bottom: 8px;
+            font-weight: 600;
+            color: var(--text-dark);
+        }
+
+        input[type="text"],
+        input[type="email"],
+        input[type="tel"],
+        input[type="number"],
+        select,
+        textarea {
+            width: 100%;
+            padding: 12px;
+            border: 1px solid var(--border-color);
+            border-radius: 5px;
+            font-size: 1em;
+            box-sizing: border-box;
+            transition: border-color 0.3s ease, box-shadow 0.3s ease;
+        }
+
+        input[type="text"]:focus,
+        input[type="email"]:focus,
+        input[type="tel"]:focus,
+        input[type="number"]:focus,
+        select:focus,
+        textarea:focus {
+            border-color: var(--primary-color);
+            box-shadow: 0 0 0 0.2rem rgba(0, 123, 255, 0.25);
+            outline: none;
+        }
+
+        textarea {
+            resize: vertical;
+            min-height: 90px;
+        }
+
+        .toggle-section {
+            background-color: var(--background-light);
+            border: 1px solid var(--border-color);
+            border-radius: 5px;
+            padding: 15px;
+            margin-bottom: 20px;
+            display: flex;
+            align-items: center;
+            gap: 15px;
+        }
+
+        .toggle-section label {
+            margin-bottom: 0;
+            font-weight: normal;
+        }
+
+        .product-search-area {
+            display: flex;
+            gap: 10px;
+            margin-bottom: 20px;
+            align-items: flex-end;
+        }
+
+        .product-search-area .form-group {
+            flex-grow: 1;
+            margin-bottom: 0;
+        }
+
+        .product-search-results {
+            border: 1px solid var(--border-color);
+            border-radius: 5px;
+            max-height: 200px;
+            overflow-y: auto;
+            background-color: var(--white);
+            margin-top: -15px;
+            box-shadow: 0 2px 5px rgba(0, 0, 0, 0.05);
+            z-index: 10;
+            position: relative;
+        }
+
+        .product-search-results div {
+            padding: 10px 15px;
+            cursor: pointer;
+            transition: background-color 0.2s ease;
+        }
+
+        .product-search-results div:hover {
+            background-color: var(--primary-color);
+            color: var(--white);
+        }
+
+        .product-search-results div + div {
+            border-top: 1px solid var(--border-color);
+        }
+
+        .product-search-results .no-results {
+            color: var(--light-text-color);
+            text-align: center;
+            font-style: italic;
+            padding: 10px;
+        }
+
+        .button {
+            padding: 10px 20px;
+            border: none;
+            border-radius: 5px;
+            cursor: pointer;
+            font-size: 1em;
+            font-weight: 600;
+            transition: background-color 0.3s ease, transform 0.2s ease;
+            white-space: nowrap;
+        }
+
+        .button:hover {
+            transform: translateY(-2px);
+        }
+
+        .button:active {
+            transform: translateY(0);
+        }
+
+        .button-primary {
+            background-color: var(--primary-color);
+            color: var(--white);
+        }
+
+        .button-primary:hover {
+            background-color: #0056b3;
+        }
+
+        .button-accent {
+            background-color: var(--accent-color);
+            color: var(--white);
+        }
+        .button-accent:hover {
+            background-color: #218838;
+        }
+
+        .table-responsive {
+            overflow-x: auto;
+            margin-top: 20px;
+            margin-bottom: 20px;
+        }
+
+        .product-table {
+            width: 100%;
+            border-collapse: collapse;
+            margin-top: 15px;
+        }
+
+        .product-table th,
+        .product-table td {
+            border: 1px solid var(--border-color);
+            padding: 12px;
+            text-align: left;
+        }
+
+        .product-table th {
+            background-color: var(--primary-color);
+            color: var(--white);
+            font-weight: 600;
+        }
+
+        .product-table tbody tr:nth-child(even) {
+            background-color: var(--background-light);
+        }
+
+        .product-table .delete-row-btn {
+            background-color: var(--danger-color);
+            color: var(--white);
+            border: none;
+            padding: 6px 10px;
+            border-radius: 4px;
+            cursor: pointer;
+            font-size: 0.85em;
+            transition: background-color 0.2s ease;
+        }
+        .product-table .delete-row-btn:hover {
+            background-color: #c82333;
+        }
+
+        .product-table .editable-price-input {
+            width: 90px;
+            padding: 5px;
+            text-align: right;
+            border: 1px solid #ccc;
+            border-radius: 3px;
+            box-sizing: border-box;
+        }
+
+
+        .totals-area {
+            background-color: var(--accent-color);
+            color: var(--white);
+            padding: 20px;
+            border-radius: 8px;
+            margin-top: 30px;
+            font-size: 1.1em;
+            font-weight: 500;
+        }
+
+        .totals-area div {
+            display: flex;
+            justify-content: space-between;
+            padding: 5px 0;
+            border-bottom: 1px solid rgba(255, 255, 255, 0.3);
+        }
+
+        .totals-area div:last-child {
+            border-bottom: none;
+            font-size: 1.3em;
+            font-weight: 600;
+            margin-top: 10px;
+            padding-top: 10px;
+        }
+
+        .payment-options {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 15px;
+            margin-top: 15px;
+        }
+
+        .payment-option-btn {
+            background-color: var(--background-light);
+            border: 1px solid var(--border-color);
+            padding: 10px 15px;
+            border-radius: 5px;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            font-weight: 500;
+        }
+
+        .payment-option-btn.selected {
+            background-color: var(--primary-color);
+            color: var(--white);
+            border-color: var(--primary-color);
+            box-shadow: 0 2px 5px rgba(0, 123, 255, 0.2);
+        }
+        .payment-option-btn:not(.selected):hover {
+            background-color: #e9ecef;
+        }
+
+        .footer-info {
+            text-align: center;
+            color: var(--secondary-color);
+            font-size: 0.9em;
+            padding: 20px;
+            background-color: var(--white);
+            border-radius: 12px;
+            box-shadow: 0 4px 15px rgba(0, 0, 0, 0.08);
+            width: 100%;
+            max-width: 700px;
+            box-sizing: border-box;
+            margin-top: 30px;
+        }
+        .footer-info h3 {
+            color: var(--primary-color);
+            margin-top: 0;
+            margin-bottom: 10px;
+            font-size: 1.4em;
+            text-align: center;
+        }
+        .footer-info p {
+            margin: 5px 0;
+            line-height: 1.5;
+        }
+        .footer-info strong {
+            color: var(--text-dark);
+        }
+        .footer-info a {
+            color: var(--primary-color);
+            text-decoration: none;
+            transition: color 0.3s ease;
+        }
+        .footer-info a:hover {
+            color: var(--accent-color);
+            text-decoration: underline;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>Generador de Notas de Pedido</h1>
+
+        <form id="orderForm">
+            <h2>Datos del Cliente</h2>
+            <div class="form-group">
+                <label for="client_name_input">Nombre Completo:</label>
+                <input type="text" id="client_name_input" name="client_name" required placeholder="Ej: Juan Pérez">
+            </div>
+            <div class="form-group">
+                <label for="client_address_input">Dirección:</label>
+                <input type="text" id="client_address_input" name="client_address" required placeholder="Ej: Calle Falsa 123, Col. Centro, Ciudad">
+            </div>
+            <div class="form-group">
+                <label for="client_phone_input">Teléfono:</label>
+                <input type="tel" id="client_phone_input" name="client_phone" required placeholder="Ej: 5512345678">
+            </div>
+
+            <h2>Búsqueda y Añadir Productos</h2>
+            <div class="product-search-area">
+                <div class="form-group" style="flex-basis: 60%;">
+                    <label for="product_search">Buscar Producto:</label>
+                    <input type="text" id="product_search" placeholder="Escribe el nombre del producto...">
+                    <div id="search_results" class="product-search-results" style="display: none;"></div>
+                </div>
+                <div class="form-group" style="flex-basis: 20%;">
+                    <label for="add_quantity">Cantidad:</label>
+                    <input type="number" id="add_quantity" value="1" min="0.01" step="0.01">
+                </div>
+                <div class="form-group" style="flex-basis: 20%;">
+                    <label for="add_unit">Unidad:</label>
+                    <select id="add_unit">
+                        <option value="KG">Kilo</option>
+                        <option value="PZ">Pieza</option>
+                        <option value="L">Litro</option>
+                        <option value="MJO">Manojo</option>
+                        <option value="DOMO">DOMO</option>
+                        <option value="DOCENA">Docena</option>
+                        <option value="BOLSA">Bolsa</option>
+                        <option value="PAQUETE">Paquete</option>
+                        <option value="FT">A Granel</option>
+                    </select>
+                </div>
+                <button type="button" class="button button-accent" id="add_product_to_table">Añadir</button>
+            </div>
+
+            <div class="table-responsive">
+                <table class="product-table">
+                    <thead>
+                        <tr>
+                            <th>Producto</th>
+                            <th>Cantidad</th>
+                            <th>Unidad</th>
+                            <th>Precio Unitario</th>
+                            <th>Subtotal</th>
+                            <th>Acción</th>
+                        </tr>
+                    </thead>
+                    <tbody id="order_items_tbody">
+                    </tbody>
+                </table>
+            </div>
+
+            <div class="toggle-section">
+                <label for="iva_toggle">Aplicar IVA (16%):</label>
+                <input type="checkbox" id="iva_toggle">
+            </div>
+
+            <div class="totals-area">
+                <div><span>Subtotal:</span> <span id="subtotal_display">$0.00</span></div>
+                <div id="iva_row" style="display: none;"><span>IVA (16%):</span> <span id="iva_display">$0.00</span></div>
+                <div><span>Total:</span> <span id="total_display">$0.00</span></div>
+            </div>
+
+            <h2>Forma de Pago</h2>
+            <div class="payment-options" id="payment_options">
+                <button type="button" class="payment-option-btn selected" data-value="Efectivo">Efectivo</button>
+                <button type="button" class="payment-option-btn" data-value="Transferencia">Transferencia</button>
+                <button type="button" class="payment-option-btn" data-value="Tarjeta">Tarjeta</button>
+                <button type="button" class="payment-option-btn" data-value="Cheque">Cheque</button>
+                <button type="button" class="payment-option-btn" data-value="Otro">Otro</button>
+            </div>
+            <input type="hidden" id="selected_payment_method" name="payment_method" value="Efectivo">
+            
+            <h2>Comentarios Adicionales</h2>
+            <div class="form-group">
+                <label for="comments">Notas o comentarios sobre el pedido:</label>
+                <textarea id="comments" name="comments" placeholder="Ej: Entregar por la tarde, productos bien maduros, etc."></textarea>
+            </div>
+            
+            <div style="text-align: center; margin-top: 40px;">
+                <button type="button" class="button button-primary" id="download_excel_btn">Descargar Nota en Excel</button>
+            </div>
+        </form>
+    </div>
+
+    <div class="footer-info">
+        <h3>PEDIDOS</h3>
+        <p><strong>Delfino Luis Hernández</strong></p>
+        <p>Encargado</p>
+        <p>Cel: <a href="tel:+525530560298">55 3056 0298</a></p>
+        <p>Correo: <a href="mailto:dlh198019@yahoo.com">dlh198019@yahoo.com</a></p>
+    </div>
+
+    <script>
+    // Data de productos
+    const productsData = [
+        { name: "ACELGA MJO CH", unit: "MJO CH", price: 10.00 }, { name: "ACITRON", unit: "KG", price: 0 }, { name: "AGUACATE HASS", unit: "KG", price: 94.00 }, { name: "AJO ITALIANO", unit: "KG", price: 125.00 }, { name: "AJO MACHO", unit: "KG", price: 500.00 }, { name: "AJOS EN CABEZA", unit: "KG", price: 125.00 }, { name: "ALBACAR", unit: "KG", price: 60.00 }, { name: "ALBACAR MJO MJO CH", unit: "MJO CH", price: 10.00 }, { name: "ALBACAR ORGANICA", unit: "KG", price: 149.50 }, { name: "ALCACHOFA GDE", unit: "PZ", price: 120.00 }, { name: "ALCACHOFA MEDIANA", unit: "PZ", price: 90.00 }, { name: "ALFALFA", unit: "KG", price: 12.00 }, { name: "ALMENDRA", unit: "KG", price: 197.00 }, { name: "APIO", unit: "KG", price: 16.50 }, { name: "ARANDANO", unit: "KG", price: 135.00 }, { name: "ARNICA MJO CH", unit: "MJO CH", price: 15.00 }, { name: "ARUGULA", unit: "KG", price: 95.00 }, { name: "ARUGULA BABY", unit: "KG", price: 115.00 }, { name: "BERENJENA", unit: "KG", price: 45.00 }, { name: "BERRO", unit: "KG", price: 13.50 }, { name: "BERZA", unit: "KG", price: 50.00 }, { name: "BETABEL", unit: "KG", price: 22.50 }, { name: "BLUE BERRY", unit: "DOMO", price: 45.00 }, { name: "BROCOLI", unit: "KG", price: 34.50 }, { name: "CALABAZA BOLA", unit: "KG", price: 28.00 }, { name: "CALABAZA CASTILLA", unit: "KG", price: 38.00 }, { name: "CALABAZA ITALIANA", unit: "KG", price: 21.50 }, { name: "CAMOTE", unit: "KG", price: 45.00 }, { name: "CARAMBOLA", unit: "KG", price: 70.00 }, { name: "CEBOLLA BLANCA", unit: "KG", price: 13.50 }, { name: "CEBOLLA CAMBRAY CON RABO", unit: "KG", price: 45.00 }, { name: "CEBOLLA CAMBRAY LIMPIA", unit: "KG", price: 45.00 }, { name: "CEBOLLA MORADA", unit: "KG", price: 16.00 }, { name: "CEBOLLIN", unit: "KG", price: 215.00 }, { name: "CEREZA", unit: "KG", price: 190.00 }, { name: "CHAMBARETE C/HUESO", unit: "KG", price: 190.00 }, { name: "CHAMPIÑON", unit: "KG", price: 96.00 }, { name: "CHAYOTE", unit: "KG", price: 26.00 }, { name: "CHICHARO JAPONES", unit: "KG", price: 170.00 }, { name: "CHICHARO LIMPIO", unit: "KG", price: 125.00 }, { name: "CHICHARO VAINA", unit: "KG", price: 58.00 }, { name: "CHICOZAPOTE", unit: "KG", price: 80.00 }, { name: "CHILACAYOTE", unit: "KG", price: 65.00 }, { name: "CHILE ANCHO", unit: "KG", price: 161.50 }, { name: "CHILE CASCABEL", unit: "KG", price: 250.00 }, { name: "CHILE CHIPOTLE SECO", unit: "KG", price: 125.00 }, { name: "CHILE CUARESMEÑO", unit: "KG", price: 22.50 }, { name: "CHILE DE ARBOL SECO", unit: "KG", price: 150.00 }, { name: "CHILE DE ARBOL VERDE", unit: "KG", price: 75.00 }, { name: "CHILE GUAJILLO", unit: "KG", price: 140.00 }, { name: "CHILE HABANERO", unit: "KG", price: 60.00 }, { name: "CHILE MANZANO", unit: "KG", price: 100.00 }, { name: "CHILE MORITA", unit: "KG", price: 145.00 }, { name: "CHILE MULATO", unit: "KG", price: 172.00 }, { name: "CHILE PASILLA", unit: "KG", price: 170.00 }, { name: "CHILE PIQUIN MOLIDO", unit: "KG", price: 55.00 }, { name: "CHILE POBLANO", unit: "KG", price: 43.50 }, { name: "CHILE PULLA", unit: "KG", price: 36.00 }, { name: "CHILE SERRANO VERDE", unit: "KG", price: 20.00 }, { name: "CHIRIMOYA", unit: "KG", price: 0 }, { name: "CILANTRO MJO CH", unit: "MJO CH", price: 10.00 }, { name: "CIRUELA MOSCATEL", unit: "KG", price: 90.00 }, { name: "CIRUELA ROJA", unit: "KG", price: 90.00 }, { name: "COCO", unit: "PZA", price: 40.00 }, { name: "COCO RAYADO", unit: "KG", price: 175.00 }, { name: "COL BLANCA", unit: "PZA", price: 25.00 }, { name: "COL DE BRUSELAS", unit: "KG", price: 50.00 }, { name: "COL MORADA", unit: "PZA", price: 60.00 }, { name: "COLIFLOR MR. LUCKY", unit: "PZA", price: 40.00 }, { name: "DURAZNO CRIOLLO", unit: "KG", price: 110.00 }, { name: "DURAZNO MELOCOTON", unit: "KG", price: 110.00 }, { name: "ECHALOT AMERICANO", unit: "KG", price: 185.00 }, { name: "ECHALOT NACIONAL", unit: "KG", price: 135.00 }, { name: "EJOTE", unit: "KG", price: 45.50 }, { name: "EJOTE FRANCES", unit: "KG", price: 150.00 }, { name: "ELOTE", unit: "PZA", price: 12.00 }, { name: "ELOTE EN GRANOS", unit: "KG", price: 58.00 }, { name: "ENELDO CON BULBO", unit: "KG", price: 105.00 }, { name: "EPAZOTE MJO CH", unit: "MJO CH", price: 10.00 }, { name: "ESPARRAGO", unit: "KG", price: 240.00 }, { name: "ESPINACA MJO CH", unit: "MJO CH", price: 10.00 }, { name: "ESPINACA BABY 180 GR", unit: "DOMO", price: 67.00 }, { name: "ESPINACA BABY ECONOMICA", unit: "DOMO", price: 40.00 }, { name: "FLOR DE CALABAZA", unit: "KG", price: 59.00 }, { name: "FRAMBUESA", unit: "DOMO", price: 45.00 }, { name: "FRESA", unit: "KG", price: 125.00 }, { name: "GERMEN DE ALFALFA", unit: "KG", price: 50.00 }, { name: "GERMEN DE SOYA", unit: "KG", price: 40.00 }, { name: "GRANADA CHINA", unit: "KG", price: 0 }, { name: "GRANADA ROJA", unit: "KG", price: 0 }, { name: "GUANABANA", unit: "KG", price: 68.00 }, { name: "GUAYABA", unit: "KG", price: 44.00 }, { name: "HABA FRESCA VAINA", unit: "KG", price: 65.00 }, { name: "HABA VERDE LIMPIA", unit: "KG", price: 125.00 }, { name: "HIERBABUENA MJO CH", unit: "MJO CH", price: 10.00 }, { name: "HIERBAS DE OLOR", unit: "MJO", price: 8.00 }, { name: "HIGO", unit: "KG", price: 135.00 }, { name: "HOJA DE AGUACATE", unit: "MJO", price: 25.00 }, { name: "HOJA DE LAUREL", unit: "MJO", price: 30.00 }, { name: "HOJA DE LIMON", unit: "MJO", price: 32.00 }, { name: "HOJA DE MENTA", unit: "MJO", price: 24.00 }, { name: "HOJA DE MIXIOTE PAPEL", unit: "DOCENA", price: 48.00 }, { name: "HOJA DE OREGANO FRESCO", unit: "KG", price: 120.00 }, { name: "HOJA DE PENCA DE MAGUEY", unit: "PZ", price: 42.00 }, { name: "HOJA SANTA", unit: "MJO", price: 30.00 }, { name: "HOJAS DE NARANJO", unit: "MJO", price: 30.00 }, { name: "HOJAS DE PLATANO", unit: "MJO", price: 45.00 }, { name: "HONGO PORTOBELLO", unit: "KG", price: 130.00 }, { name: "HONGO SETAS BLANCAS", unit: "KG", price: 58.00 }, { name: "HUAZONTLE", unit: "KG", price: 40.00 }, { name: "HUEVO", unit: "KG", price: 55.00 }, { name: "HUITLACOCHE", unit: "KG", price: 58.00 }, { name: "JAMAICA", unit: "KG", price: 100.00 }, { name: "JENGIBRE", unit: "KG", price: 106.00 }, { name: "JICAMA", unit: "KG", price: 15.00 }, { name: "JITOMATE BOLA", unit: "KG", price: 39.00 }, { name: "JITOMATE CHERRY", unit: "DOMO", price: 15.00 }, { name: "JITOMATE GUAJE", unit: "KG", price: 26.00 }, { name: "KIWI", unit: "KG", price: 80.00 }, { name: "KIWI DORADO", unit: "KG", price: 0 }, { name: "LECHUGA COGOLLO", unit: "DOMO", price: 70.00 }, { name: "LECHUGA ENDIVIA 400 GR", unit: "DOMO", price: 190.00 }, { name: "LECHUGA ESCAROLA", unit: "PZA", price: 15.50 }, { name: "LECHUGA FRANCESA", unit: "PZA", price: 32.00 }, { name: "LECHUGA FREZZY", unit: "PZA", price: 16.00 }, { name: "LECHUGA ITALIANA", unit: "PZA", price: 15.50 }, { name: "LECHUGA OREJONA MR. LUCKY", unit: "PZA", price: 22.00 }, { name: "LECHUGA RADICCIO", unit: "PZA", price: 43.00 }, { name: "LECHUGA ROMANA MR. LUCKY", unit: "PZA", price: 16.00 }, { name: "LECHUGA SANGRIA", unit: "PZA", price: 15.50 }, { name: "LECHUGA SUCRINE 3 PZAS. 6 GR", unit: "BOLSA", price: 60.00 }, { name: "LIMA", unit: "KG", price: 0 }, { name: "LIMON AMARILLO", unit: "KG", price: 60.00 }, { name: "LIMON CON SEMILLA", unit: "KG", price: 24.50 }, { name: "LIMON SIN SEMILLA", unit: "KG", price: 23.50 }, { name: "LYCHEE", unit: "KG", price: 65.00 }, { name: "MAIZ POZOLERO", unit: "KG", price: 30.00 }, { name: "MAMEY", unit: "KG", price: 26.00 }, { name: "MANDARINA GRANDE", unit: "KG", price: 0 }, { name: "MANDARINA PARA JUGO", unit: "KG", price: 0 }, { name: "MANGO ATAULFO", unit: "KG", price: 34.00 }, { name: "MANGO MANILA", unit: "KG", price: 39.00 }, { name: "MANGO PETACON", unit: "KG", price: 35.00 }, { name: "MANZANA GALA", unit: "KG", price: 59.00 }, { name: "MANZANA GOLDEN AMERICANA", unit: "KG", price: 60.00 }, { name: "MANZANA SMITH", unit: "KG", price: 56.00 }, { name: "MANZANA STARKING (ROJA)", unit: "KG", price: 52.00 }, { name: "MANZANILLA", unit: "KG", price: 55.00 }, { name: "MARACUYA", unit: "KG", price: 88.00 }, { name: "MEJORANA 200 GR", unit: "MJO", price: 25.00 }, { name: "MELON CHINO", unit: "KG", price: 19.50 }, { name: "MELON VALENCIANO", unit: "KG", price: 42.00 }, { name: "NABO", unit: "KG", price: 60.00 }, { name: "NARANJA", unit: "KG", price: 23.50 }, { name: "NARANJA SIN SEMILLA", unit: "KG", price: 0 }, { name: "NARANJA VALENCIANA", unit: "KG", price: 89.00 }, { name: "NOPAL", unit: "KG", price: 23.50 }, { name: "NOPAL CAMBRAY", unit: "KG", price: 50.00 }, { name: "NUEZ", unit: "KG", price: 305.00 }, { name: "OREGANO FRESCO", unit: "KG", price: 140.00 }, { name: "PAPA BLANCA", unit: "KG", price: 25.50 }, { name: "PAPA CAMBRAY", unit: "KG", price: 18.00 }, { name: "PAPAYA", unit: "KG", price: 26.50 }, { name: "PEPINILLO", unit: "KG", price: 50.00 }, { name: "PEPINO", unit: "KG", price: 22.00 }, { name: "PEPINO EUROPEO", unit: "KG", price: 34.00 }, { name: "PERA ASIATICA", unit: "KG", price: 65.00 }, { name: "PERA BOSS", unit: "KG", price: 0 }, { name: "PERA MANTEQUILLA", unit: "KG", price: 65.00 }, { name: "PERA ROJA", unit: "KG", price: 65.00 }, { name: "PEREJIL CHINO", unit: "KG", price: 100.00 }, { name: "PEREJIL LISO MJO CH", unit: "MJO CH", price: 10.00 }, { name: "PERSIMO", unit: "KG", price: 0 }, { name: "PIMIENTO AMARILLO", unit: "KG", price: 43.00 }, { name: "PIMIENTO NARANJA", unit: "KG", price: 43.00 }, { name: "PIMIENTO ROJO", unit: "KG", price: 43.00 }, { name: "PIMIENTO VERDE", unit: "KG", price: 43.00 }, { name: "PIÑA CRISTALIZADA", unit: "KG", price: 129.00 }, { name: "PIÑA MIEL", unit: "KG", price: 30.00 }, { name: "PIÑON BLANCO", unit: "KG", price: 600.00 }, { name: "PIÑON ROSA", unit: "KG", price: 2200.00 }, { name: "PITAHAYA", unit: "KG", price: 235.00 }, { name: "PLATANO DOMINICO", unit: "KG", price: 45.00 }, { name: "PLATANO MACHO", unit: "KG", price: 20.50 }, { name: "PLATANO TABASCO", unit: "KG", price: 25.50 }, { name: "PORO", unit: "KG", price: 30.00 }, { name: "PULPA BLUE BERRY", unit: "KG", price: 110.00 }, { name: "PULPA DE FRAMBUESA", unit: "KG", price: 90.00 }, { name: "PULPA DE FRESA", unit: "KG", price: 60.00 }, { name: "PULPA DE GUANABANA", unit: "KG", price: 115.00 }, { name: "PULPA DE MAMEY", unit: "KG", price: 75.00 }, { name: "PULPA DE MANGO", unit: "KG", price: 70.00 }, { name: "PULPA DE MARACUYA", unit: "KG", price: 105.00 }, { name: "PULPA DE TAMARINDO", unit: "KG", price: 65.00 }, { name: "PULPA DE ZAPOTE", unit: "KG", price: 70.00 }, { name: "PULPA DE ZARZAMORA", unit: "KG", price: 80.00 }, { name: "QUELITES", unit: "KG", price: 42.00 }, { name: "QUINTONIL", unit: "KG", price: 42.00 }, { name: "RABANO CAMBRAY", unit: "KG", price: 50.00 }, { name: "RABANO LARGO", unit: "KG", price: 60.00 }, { name: "RAMBUTAN", unit: "KG", price: 0 }, { name: "ROMERO DE OLOR MJO CH", unit: "MJO CH", price: 21.50 }, { name: "ROMEROS", unit: "KG", price: 22.00 }, { name: "RUDA", unit: "MJO", price: 20.00 }, { name: "SANDIA CON SEMILLA - PESO MINIMO 6 KG", unit: "KG", price: 17.00 }, { name: "SANDIA SIN SEMILLA CHICA (1.5 KG - 5 KG)", unit: "PZA", price: 45.00 }, { name: "SAVILA", unit: "KG", price: 95.00 }, { name: "SOPA DE VERDURA", unit: "DOMO", price: 10.00 }, { name: "TAMARINDO", unit: "KG", price: 65.00 }, { name: "TE DE LIMON", unit: "MJO", price: 25.00 }, { name: "TOMATE LIMPIO", unit: "KG", price: 19.00 }, { name: "TOMATILLO LIMPIO", unit: "KG", price: 32.00 }, { name: "TOMILLO FRESCO", unit: "KG", price: 140.00 }, { name: "TORONJA", unit: "KG", price: 24.50 }, { name: "TUNA", unit: "KG", price: 0 }, { name: "UVA ROJA GLOBO", unit: "KG", price: 90.00 }, { name: "UVA VERDE S/SEMILLA", unit: "KG", price: 155.00 }, { name: "VERDOLAGA", unit: "KG", price: 26.00 }, { name: "XOCONOSTLE", unit: "KG", price: 31.00 }, { name: "ZANAHORIA CAMBRAY", unit: "KG", price: 35.00 }, { name: "ZANAHORIA MEDIANA", unit: "KG", price: 18.50 }, { name: "ZAPOTE NEGRO", unit: "KG", price: 55.00 }, { name: "ZARZAMORA", unit: "DOMO", price: 32.00 }
+    ];
+
+    let orderItems = []; 
+
+    // Referencias a elementos del DOM
+    const clientNameInput = document.getElementById('client_name_input');
+    const clientAddressInput = document.getElementById('client_address_input');
+    const clientPhoneInput = document.getElementById('client_phone_input');
+    const productSearchInput = document.getElementById('product_search');
+    const searchResultsDiv = document.getElementById('search_results');
+    const addQuantityInput = document.getElementById('add_quantity');
+    const addUnitSelect = document.getElementById('add_unit');
+    const addProductToTableBtn = document.getElementById('add_product_to_table');
+    const orderItemsTbody = document.getElementById('order_items_tbody');
+    const ivaToggle = document.getElementById('iva_toggle');
+    const subtotalDisplay = document.getElementById('subtotal_display');
+    const ivaDisplay = document.getElementById('iva_display');
+    const ivaRow = document.getElementById('iva_row');
+    const totalDisplay = document.getElementById('total_display');
+    const paymentOptionsDiv = document.getElementById('payment_options');
+    const selectedPaymentMethodInput = document.getElementById('selected_payment_method');
+    const downloadExcelBtn = document.getElementById('download_excel_btn');
+
+    let selectedProductForAdd = null; 
+
+    // --- Toda la lógica para buscar, añadir y renderizar la tabla se mantiene igual ---
+    productSearchInput.addEventListener('input', () => { const searchTerm = productSearchInput.value.trim().toLowerCase(); searchResultsDiv.innerHTML = ''; selectedProductForAdd = null; if (searchTerm.length === 0) { searchResultsDiv.style.display = 'none'; return; } const filteredProducts = productsData.filter(product => product.name.toLowerCase().includes(searchTerm)); if (filteredProducts.length > 0) { searchResultsDiv.style.display = 'block'; filteredProducts.forEach(product => { const div = document.createElement('div'); const priceText = product.price > 0 ? `$${product.price.toFixed(2)}` : 'A Determinar'; div.textContent = `${product.name} (${product.unit} - ${priceText})`; div.dataset.productName = product.name; div.addEventListener('click', () => { productSearchInput.value = product.name; selectedProductForAdd = product; addUnitSelect.value = product.unit; searchResultsDiv.style.display = 'none'; addQuantityInput.focus(); }); searchResultsDiv.appendChild(div); }); } else { searchResultsDiv.style.display = 'block'; const noResultsDiv = document.createElement('div'); noResultsDiv.classList.add('no-results'); noResultsDiv.textContent = 'No se encontraron productos.'; searchResultsDiv.appendChild(noResultsDiv); } });
+    document.addEventListener('click', (event) => { if (!productSearchInput.contains(event.target) && !searchResultsDiv.contains(event.target)) { searchResultsDiv.style.display = 'none'; } });
+    addProductToTableBtn.addEventListener('click', () => { const currentSearchValue = productSearchInput.value.trim(); if (currentSearchValue && (!selectedProductForAdd || selectedProductForAdd.name.toLowerCase() !== currentSearchValue.toLowerCase())) { const exactMatch = productsData.find(p => p.name.toLowerCase() === currentSearchValue.toLowerCase()); if (exactMatch) { selectedProductForAdd = exactMatch; } else { alert('Por favor, selecciona un producto de la lista o escribe su nombre completo y exacto.'); return; } } if (!selectedProductForAdd) { alert('Por favor, busca y selecciona un producto.'); return; } const quantity = parseFloat(addQuantityInput.value); const unit = addUnitSelect.value; if (isNaN(quantity) || quantity <= 0) { alert('Por favor, ingresa una cantidad válida y positiva.'); addQuantityInput.focus(); return; } const existingItemIndex = orderItems.findIndex(item => item.name === selectedProductForAdd.name); if (existingItemIndex > -1) { orderItems[existingItemIndex].quantity = parseFloat((orderItems[existingItemIndex].quantity + quantity).toFixed(2)); orderItems[existingItemIndex].unit = unit; } else { orderItems.push({ name: selectedProductForAdd.name, quantity: quantity, unit: unit, price: selectedProductForAdd.price }); } renderOrderTable(); calculateTotals(); productSearchInput.value = ''; addQuantityInput.value = '1'; addUnitSelect.value = 'KG'; selectedProductForAdd = null; });
+    function renderOrderTable() { orderItemsTbody.innerHTML = ''; if (orderItems.length === 0) { orderItemsTbody.innerHTML = '<tr><td colspan="6" style="text-align: center; color: var(--secondary-color);">No hay productos en el pedido.</td></tr>'; return; } orderItems.forEach((item, index) => { const row = orderItemsTbody.insertRow(); const itemSubtotal = item.quantity * item.price; row.innerHTML = `<td>${item.name}</td><td><input type="number" value="${item.quantity.toFixed(2)}" min="0.01" step="0.01" data-index="${index}" class="item-quantity-input" style="width: 80px;"></td><td><select data-index="${index}" class="item-unit-select" style="width: 80px;"><option value="KG" ${item.unit === 'KG' ? 'selected' : ''}>Kilo</option><option value="PZ" ${item.unit === 'PZ' ? 'selected' : ''}>Pieza</option><option value="L" ${item.unit === 'L' ? 'selected' : ''}>Litro</option><option value="MJO" ${item.unit === 'MJO' ? 'selected' : ''}>Manojo</option><option value="DOMO" ${item.unit === 'DOMO' ? 'selected' : ''}>DOMO</option><option value="DOCENA" ${item.unit === 'DOCENA' ? 'selected' : ''}>Docena</option><option value="BOLSA" ${item.unit === 'BOLSA' ? 'selected' : ''}>Bolsa</option><option value="PAQUETE" ${item.unit === 'PAQUETE' ? 'selected' : ''}>Paquete</option><option value="FT" ${item.unit === 'FT' ? 'selected' : ''}>A Granel</option></select></td><td><input type="number" value="${item.price >= 0 ? item.price.toFixed(2) : ''}" min="0" step="0.01" data-index="${index}" class="editable-price-input" placeholder="0.00"></td><td class="item-subtotal-cell">$${itemSubtotal.toFixed(2)}</td><td><button type="button" class="delete-row-btn" data-index="${index}">Eliminar</button></td>`; }); orderItemsTbody.querySelectorAll('.item-quantity-input').forEach(input => { input.addEventListener('change', (e) => { const index = parseInt(e.target.dataset.index); const newQuantity = parseFloat(e.target.value); if (!isNaN(newQuantity) && newQuantity >= 0) { orderItems[index].quantity = newQuantity; updateRowSubtotalAndTotals(index, e.target.closest('tr')); } else { alert('Cantidad inválida. Por favor, ingresa un número positivo.'); e.target.value = orderItems[index].quantity.toFixed(2); } }); }); orderItemsTbody.querySelectorAll('.editable-price-input').forEach(input => { input.addEventListener('change', (e) => { const index = parseInt(e.target.dataset.index); const newPrice = parseFloat(e.target.value); if (!isNaN(newPrice) && newPrice >= 0) { orderItems[index].price = newPrice; updateRowSubtotalAndTotals(index, e.target.closest('tr')); } else { alert('Precio inválido. Por favor, ingresa un número no negativo.'); e.target.value = (orderItems[index].price >= 0 && !isNaN(orderItems[index].price)) ? orderItems[index].price.toFixed(2) : ''; } }); }); orderItemsTbody.querySelectorAll('.item-unit-select').forEach(select => { select.addEventListener('change', (e) => { const index = parseInt(e.target.dataset.index); orderItems[index].unit = e.target.value; }); }); orderItemsTbody.querySelectorAll('.delete-row-btn').forEach(button => { button.addEventListener('click', (e) => { const index = parseInt(e.target.dataset.index); orderItems.splice(index, 1); renderOrderTable(); calculateTotals(); }); }); }
+    function updateRowSubtotalAndTotals(index, rowElement) { const item = orderItems[index]; const currentItemPrice = isNaN(item.price) ? 0 : parseFloat(item.price); const itemSubtotal = item.quantity * currentItemPrice; rowElement.querySelector('.item-subtotal-cell').textContent = `$${itemSubtotal.toFixed(2)}`; calculateTotals(); }
+    function calculateTotals() { let currentSubtotal = orderItems.reduce((sum, item) => sum + (item.quantity * (isNaN(item.price) ? 0 : parseFloat(item.price))), 0); subtotalDisplay.textContent = `$${currentSubtotal.toFixed(2)}`; let currentIva = 0; if (ivaToggle.checked) { currentIva = currentSubtotal * 0.16; ivaRow.style.display = 'flex'; } else { ivaRow.style.display = 'none'; } ivaDisplay.textContent = `$${currentIva.toFixed(2)}`; const total = currentSubtotal + currentIva; totalDisplay.textContent = `$${total.toFixed(2)}`; }
+    ivaToggle.addEventListener('change', calculateTotals);
+    paymentOptionsDiv.addEventListener('click', (e) => { if (e.target.classList.contains('payment-option-btn')) { document.querySelectorAll('.payment-option-btn').forEach(btn => btn.classList.remove('selected')); e.target.classList.add('selected'); selectedPaymentMethodInput.value = e.target.dataset.value; } });
+
+
+    // --- FUNCIÓN DE DESCARGA ACTUALIZADA CON FÓRMULAS Y VALIDACIÓN DE PRECIO 0 ---
+    downloadExcelBtn.addEventListener('click', () => {
+        if (!clientNameInput.value.trim() || !clientAddressInput.value.trim() || !clientPhoneInput.value.trim()) {
+            alert('Por favor, completa todos los datos del cliente (Nombre, Dirección y Teléfono).');
+            return;
+        }
+        if (orderItems.length === 0) {
+            alert('No hay productos en el pedido para generar la nota.');
+            return;
+        }
+
+        // CAMBIO 1: Permitir precio 0 en la validación
+        const invalidPriceProducts = orderItems.filter(item => isNaN(parseFloat(item.price)) || parseFloat(item.price) < 0);
+        if (invalidPriceProducts.length > 0) {
+            alert('Por favor, asegúrate de que todos los productos tengan un precio numérico y no negativo.');
+            return;
+        }
+
+        // PREPARACIÓN DE DATOS CON FÓRMULAS
+        const clientData = [
+            ["Nombre del Cliente:", clientNameInput.value.trim()],
+            ["Dirección:", clientAddressInput.value.trim()],
+            ["Teléfono:", clientPhoneInput.value.trim()],
+            []
+        ];
+
+        const productHeaders = ["Producto", "Cantidad", "Unidad", "Precio Unitario", "Subtotal"];
+        
+        // CAMBIO 2: Generar Fórmulas para cada fila de producto
+        const productRows = orderItems.map((item, index) => {
+            const rowIndex = index + 6; // La data de productos empieza en la fila 6 de Excel
+            return [
+                item.name,
+                item.quantity,
+                item.unit,
+                item.price,
+                { f: `=B${rowIndex}*D${rowIndex}` } // Fórmula: Cantidad * Precio Unitario
+            ];
+        });
+
+        // CAMBIO 3: Generar Fórmulas para los totales
+        const firstProductRow = 6;
+        const lastProductRow = 5 + productRows.length;
+        const subtotalRange = `E${firstProductRow}:E${lastProductRow}`;
+
+        let totalsData = [[]]; // Fila vacía
+        
+        const subtotalCellAddress = `E${lastProductRow + 2}`;
+        totalsData.push([null, null, null, "Subtotal:", { f: `=SUM(${subtotalRange})` }]);
+
+        let ivaCellAddress = '';
+        if(ivaToggle.checked) {
+            ivaCellAddress = `E${lastProductRow + 3}`;
+            totalsData.push([null, null, null, "IVA (16%):", { f: `=${subtotalCellAddress}*0.16` }]);
+        }
+        
+        const totalFormula = ivaToggle.checked ? `=${subtotalCellAddress}+${ivaCellAddress}` : `=${subtotalCellAddress}`;
+        totalsData.push([null, null, null, "Total:", { f: totalFormula }]);
+        totalsData.push([null, null, null, "Forma de Pago:", selectedPaymentMethodInput.value]);
+
+        const commentsValue = document.getElementById('comments').value.trim();
+        if (commentsValue) {
+            totalsData.push([]);
+            totalsData.push(["Comentarios:", commentsValue]);
+        }
+
+        const finalData = [...clientData, productHeaders, ...productRows, ...totalsData];
+
+        const wb = XLSX.utils.book_new();
+        const ws = XLSX.utils.aoa_to_sheet(finalData);
+
+        // Aplicación de Estilos
+        const headerStyle = { font: { bold: true, color: { rgb: "FFFFFF" } }, fill: { fgColor: { rgb: "007BFF" } }, alignment: { horizontal: "center" } };
+        const totalLabelStyle = { font: { bold: true }, alignment: { horizontal: "right" } };
+        const totalValueStyle = { font: { bold: true }, numFmt: '"$"#,##0.00' };
+        const totalRowStyle = { font: { bold: true, sz: 14, color: { rgb: "FFFFFF" } }, fill: { fgColor: { rgb: "28A745" } }, numFmt: '"$"#,##0.00' };
+        const currencyStyle = { numFmt: '"$"#,##0.00' };
+
+        productHeaders.forEach((_, colIndex) => {
+            const cellAddress = XLSX.utils.encode_cell({ r: 4, c: colIndex });
+            if(ws[cellAddress]) ws[cellAddress].s = headerStyle;
+        });
+        
+        for(let i = 0; i < productRows.length; i++) {
+            let r = 5 + i;
+            ws[XLSX.utils.encode_cell({r, c: 1})].t = 'n';
+            ws[XLSX.utils.encode_cell({r, c: 3})].s = currencyStyle;
+            ws[XLSX.utils.encode_cell({r, c: 4})].s = currencyStyle;
+        }
+        
+        const subtotalLabelCell = XLSX.utils.encode_cell({r: lastProductRow + 1, c: 3});
+        const subtotalValueCell = XLSX.utils.encode_cell({r: lastProductRow + 1, c: 4});
+        ws[subtotalLabelCell].s = totalLabelStyle;
+        ws[subtotalValueCell].s = totalValueStyle;
+
+        let totalLabelCellRow = lastProductRow + 2;
+        if (ivaToggle.checked) {
+            ws[XLSX.utils.encode_cell({r: totalLabelCellRow, c: 3})].s = totalLabelStyle;
+            ws[XLSX.utils.encode_cell({r: totalLabelCellRow, c: 4})].s = totalValueStyle;
+            totalLabelCellRow++;
+        }
+        ws[XLSX.utils.encode_cell({r: totalLabelCellRow, c: 3})].s = totalLabelStyle;
+        ws[XLSX.utils.encode_cell({r: totalLabelCellRow, c: 4})].s = totalRowStyle;
+
+        const columnWidths = [ { wch: 25 }, { wch: 10 }, { wch: 10 }, { wch: 15 }, { wch: 15 } ];
+        ws['!cols'] = columnWidths;
+
+        XLSX.utils.book_append_sheet(wb, ws, "Nota de Pedido");
+        const fileName = `Nota_Pedido_${clientNameInput.value.replace(/ /g, '_')}_${new Date().toISOString().slice(0, 10)}.xlsx`;
+        XLSX.writeFile(wb, fileName);
+    });
+
+    document.addEventListener('DOMContentLoaded', () => {
+        renderOrderTable();
+        calculateTotals();
+    });
+</script>
+</body>
+</html>
